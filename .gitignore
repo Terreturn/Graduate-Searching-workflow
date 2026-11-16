@@ -1,0 +1,13 @@
+/runs/
+__pycache__/
+*.py[cod]
+._*
+.DS_Store
+.Rhistory
+.venv/
+.env
+*.sqlite3
+!workflows/phd-opportunity-screening/data/sources.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm

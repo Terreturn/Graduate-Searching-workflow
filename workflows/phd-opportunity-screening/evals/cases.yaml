@@ -1,0 +1,131 @@
+[
+  {
+    "id": "t01",
+    "message": "我想找美国的 PhD 项目",
+    "version": 1,
+    "set": {
+      "search.object": [
+        "program"
+      ],
+      "degree.type": [
+        "PhD"
+      ],
+      "program.country": [
+        "US"
+      ]
+    }
+  },
+  {
+    "id": "t02",
+    "message": "加拿大也可以。",
+    "version": 2,
+    "set": {
+      "program.country": [
+        "CA",
+        "US"
+      ]
+    }
+  },
+  {
+    "id": "t03",
+    "message": "美国的项目资助情况不限，加拿大的项目必须是全奖。",
+    "version": 3,
+    "set": {
+      "funding.coverage@US": null,
+      "funding.coverage@CA": [
+        "full"
+      ]
+    }
+  },
+  {
+    "id": "t04",
+    "message": "假如只看加拿大，会有哪些选择？",
+    "version": 3,
+    "temporary": {
+      "program.country": [
+        "CA"
+      ]
+    },
+    "search_expect": "Both Sol high searchers independently open primary evidence for each published Canadian doctoral program and its guaranteed full funding. Astra xhigh reopens the cited pages. Publish only the requested table and source links; retain evidence and decisions in the run report."
+  },
+  {
+    "id": "t05",
+    "message": "这次先给我三个。以后优先按研究匹配度排序。",
+    "version": 4,
+    "set": {
+      "ranking.by": [
+        "research_fit"
+      ]
+    },
+    "temporary": {
+      "output.limit": [
+        "3"
+      ]
+    }
+  },
+  {
+    "id": "t06",
+    "message": "取消加拿大的全奖要求，再把加拿大从搜索范围里去掉。",
+    "version": 5,
+    "set": {
+      "program.country": [
+        "US"
+      ]
+    },
+    "unset": [
+      "funding.coverage@CA"
+    ]
+  },
+  {
+    "id": "t07",
+    "message": "撤销上一次修改，恢复到修改前的目标。",
+    "version": 6,
+    "set": {
+      "program.country": [
+        "CA",
+        "US"
+      ],
+      "funding.coverage@CA": [
+        "full"
+      ]
+    }
+  },
+  {
+    "id": "graduate-five-turns",
+    "kind": "recorded_session",
+    "fixture": "fixtures/graduate-five-turns.json",
+    "questions": [
+      {
+        "id": "Q1",
+        "input": "t01",
+        "accepted": "t01",
+        "expect": "Find PhD programs in Sweden."
+      },
+      {
+        "id": "Q2",
+        "input": "t04",
+        "accepted": "t04",
+        "expect": "I study physics. Please also include Norway."
+      },
+      {
+        "id": "Q3",
+        "input": "t05",
+        "accepted": "t05",
+        "expect": "I prefer programs with a photonics focus."
+      },
+      {
+        "id": "Q4",
+        "input": "t06",
+        "accepted": "t06",
+        "expect": "Quantum optics is also an interest."
+      },
+      {
+        "id": "Q5",
+        "input": "t07",
+        "accepted": "t07",
+        "expect": "For this turn, only show programs in Norway."
+      }
+    ],
+    "description": "Synthetic five-turn replay with a legacy snapshot."
+  }
+]

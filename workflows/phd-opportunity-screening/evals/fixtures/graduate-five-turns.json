@@ -1,0 +1,1171 @@
+[
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "legacy-t01",
+    "message": "Find PhD programs in Sweden.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 0,
+    "version": 1,
+    "proposal": {
+      "intent": "discover",
+      "changes": [
+        {
+          "field": "degree.type",
+          "values": [
+            "PhD"
+          ],
+          "evidence": "PhD",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        },
+        {
+          "field": "program.country",
+          "values": [
+            "SE"
+          ],
+          "evidence": "Sweden",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        },
+        {
+          "field": "search.object",
+          "values": [
+            "program"
+          ],
+          "evidence": "programs",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [],
+      "questions": [],
+      "summary": "Find PhD programs in Sweden."
+    },
+    "before_rules": [],
+    "diff": [
+      {
+        "before": null,
+        "after": {
+          "field": "degree.type",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "PhD"
+          ]
+        }
+      },
+      {
+        "before": null,
+        "after": {
+          "field": "program.country",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "SE"
+          ]
+        }
+      },
+      {
+        "before": null,
+        "after": {
+          "field": "search.object",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "program"
+          ]
+        }
+      }
+    ],
+    "rules": [
+      {
+        "field": "degree.type",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ]
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "program"
+        ]
+      }
+    ],
+    "temporary_diff": [],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ]
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "program"
+        ]
+      }
+    ]
+  },
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "t01",
+    "message": "Find PhD programs in Sweden.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 0,
+    "version": 1,
+    "proposal": {
+      "intent": "discover",
+      "changes": [
+        {
+          "field": "degree.type",
+          "values": [
+            "PhD"
+          ],
+          "evidence": "PhD",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        },
+        {
+          "field": "program.country",
+          "values": [
+            "SE"
+          ],
+          "evidence": "Sweden",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        },
+        {
+          "field": "search.object",
+          "values": [
+            "program"
+          ],
+          "evidence": "programs",
+          "role": "scope",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [],
+      "questions": [],
+      "summary": "Find PhD programs in Sweden."
+    },
+    "before_rules": [],
+    "diff": [
+      {
+        "before": null,
+        "after": {
+          "field": "degree.type",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "PhD"
+          ]
+        }
+      },
+      {
+        "before": null,
+        "after": {
+          "field": "program.country",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "SE"
+          ]
+        }
+      },
+      {
+        "before": null,
+        "after": {
+          "field": "search.object",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "program"
+          ]
+        }
+      }
+    ],
+    "rules": [
+      {
+        "field": "degree.type",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ]
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "program"
+        ]
+      }
+    ],
+    "temporary_diff": [],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ]
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "program"
+        ]
+      }
+    ],
+    "personal_background": {
+      "version": 0,
+      "facts": []
+    },
+    "background_diff": [],
+    "background_base_version": 0,
+    "temporary_conditions": {
+      "turn_id": "t01",
+      "conditions": [],
+      "diff": []
+    }
+  },
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "t04",
+    "message": "I study physics. Please also include Norway.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 1,
+    "version": 2,
+    "proposal": {
+      "intent": "refine",
+      "changes": [
+        {
+          "field": "program.country",
+          "values": [
+            "NO"
+          ],
+          "evidence": "Norway",
+          "role": "scope",
+          "op": "add",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [
+        {
+          "op": "set",
+          "field": "education.current_field",
+          "values": [
+            "physics"
+          ],
+          "evidence": "physics"
+        }
+      ],
+      "questions": [],
+      "summary": "I study physics. Please also include Norway."
+    },
+    "before_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "diff": [
+      {
+        "before": {
+          "field": "program.country",
+          "match": "any",
+          "role": "scope",
+          "status": "specified",
+          "values": [
+            "SE"
+          ],
+          "when_country": ""
+        },
+        "after": {
+          "field": "program.country",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "NO",
+            "SE"
+          ]
+        }
+      }
+    ],
+    "rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "temporary_diff": [],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "personal_background": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "education.current_field",
+          "value": "physics",
+          "source": {
+            "goal": "optics-demo",
+            "turn_id": "t04",
+            "evidence": "physics"
+          }
+        }
+      ]
+    },
+    "background_diff": [
+      {
+        "before": null,
+        "after": {
+          "field": "education.current_field",
+          "value": "physics",
+          "source": {
+            "goal": "optics-demo",
+            "turn_id": "t04",
+            "evidence": "physics"
+          }
+        }
+      }
+    ],
+    "background_base_version": 0,
+    "temporary_conditions": {
+      "turn_id": "t04",
+      "conditions": [],
+      "diff": []
+    }
+  },
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "t05",
+    "message": "I prefer programs with a photonics focus.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 2,
+    "version": 3,
+    "proposal": {
+      "intent": "refine",
+      "changes": [
+        {
+          "field": "program.topic",
+          "values": [
+            "photonics"
+          ],
+          "evidence": "photonics",
+          "role": "preferred",
+          "op": "set",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [],
+      "questions": [],
+      "summary": "I prefer programs with a photonics focus."
+    },
+    "before_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "diff": [
+      {
+        "before": null,
+        "after": {
+          "field": "program.topic",
+          "when_country": "",
+          "role": "preferred",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "photonics"
+          ]
+        }
+      }
+    ],
+    "rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "when_country": "",
+        "role": "preferred",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "photonics"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "temporary_diff": [],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "when_country": "",
+        "role": "preferred",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "photonics"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "personal_background": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "education.current_field",
+          "source": {
+            "evidence": "physics",
+            "goal": "optics-demo",
+            "turn_id": "t04"
+          },
+          "value": "physics"
+        }
+      ]
+    },
+    "background_diff": [],
+    "background_base_version": 1,
+    "temporary_conditions": {
+      "turn_id": "t05",
+      "conditions": [],
+      "diff": []
+    }
+  },
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "t06",
+    "message": "Quantum optics is also an interest.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 3,
+    "version": 4,
+    "proposal": {
+      "intent": "refine",
+      "changes": [
+        {
+          "field": "program.topic",
+          "values": [
+            "quantum optics"
+          ],
+          "evidence": "Quantum optics",
+          "role": "preferred",
+          "op": "add",
+          "scope": "goal",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [],
+      "questions": [],
+      "summary": "Quantum optics is also an interest."
+    },
+    "before_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "match": "any",
+        "role": "preferred",
+        "status": "specified",
+        "values": [
+          "photonics"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "diff": [
+      {
+        "before": {
+          "field": "program.topic",
+          "match": "any",
+          "role": "preferred",
+          "status": "specified",
+          "values": [
+            "photonics"
+          ],
+          "when_country": ""
+        },
+        "after": {
+          "field": "program.topic",
+          "when_country": "",
+          "role": "preferred",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "photonics",
+            "quantum optics"
+          ]
+        }
+      }
+    ],
+    "rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "when_country": "",
+        "role": "preferred",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "photonics",
+          "quantum optics"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "temporary_diff": [],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "when_country": "",
+        "role": "preferred",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "photonics",
+          "quantum optics"
+        ]
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "personal_background": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "education.current_field",
+          "source": {
+            "evidence": "physics",
+            "goal": "optics-demo",
+            "turn_id": "t04"
+          },
+          "value": "physics"
+        }
+      ]
+    },
+    "background_diff": [],
+    "background_base_version": 1,
+    "temporary_conditions": {
+      "turn_id": "t06",
+      "conditions": [],
+      "diff": []
+    }
+  },
+  {
+    "owner": "fixture",
+    "goal": "optics-demo",
+    "turn_id": "t07",
+    "message": "For this turn, only show programs in Norway.",
+    "model": "synthetic-fixture",
+    "reasoning_effort": "offline",
+    "base_version": 4,
+    "version": 4,
+    "proposal": {
+      "intent": "refine",
+      "changes": [
+        {
+          "field": "program.country",
+          "values": [
+            "NO"
+          ],
+          "evidence": "Norway",
+          "role": "scope",
+          "op": "set",
+          "scope": "turn",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "background_changes": [],
+      "questions": [],
+      "summary": "For this turn, only show programs in Norway."
+    },
+    "before_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "match": "any",
+        "role": "preferred",
+        "status": "specified",
+        "values": [
+          "photonics",
+          "quantum optics"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "diff": [],
+    "rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "NO",
+          "SE"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.topic",
+        "match": "any",
+        "role": "preferred",
+        "status": "specified",
+        "values": [
+          "photonics",
+          "quantum optics"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "temporary_diff": [
+      {
+        "before": {
+          "field": "program.country",
+          "match": "any",
+          "role": "scope",
+          "status": "specified",
+          "values": [
+            "NO",
+            "SE"
+          ],
+          "when_country": ""
+        },
+        "after": {
+          "field": "program.country",
+          "when_country": "",
+          "role": "scope",
+          "match": "any",
+          "status": "specified",
+          "values": [
+            "NO"
+          ]
+        }
+      }
+    ],
+    "effective_rules": [
+      {
+        "field": "degree.type",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "PhD"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "program.country",
+        "when_country": "",
+        "role": "scope",
+        "match": "any",
+        "status": "specified",
+        "values": [
+          "NO"
+        ]
+      },
+      {
+        "field": "program.topic",
+        "match": "any",
+        "role": "preferred",
+        "status": "specified",
+        "values": [
+          "photonics",
+          "quantum optics"
+        ],
+        "when_country": ""
+      },
+      {
+        "field": "search.object",
+        "match": "any",
+        "role": "scope",
+        "status": "specified",
+        "values": [
+          "program"
+        ],
+        "when_country": ""
+      }
+    ],
+    "personal_background": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "education.current_field",
+          "source": {
+            "evidence": "physics",
+            "goal": "optics-demo",
+            "turn_id": "t04"
+          },
+          "value": "physics"
+        }
+      ]
+    },
+    "background_diff": [],
+    "background_base_version": 1,
+    "temporary_conditions": {
+      "turn_id": "t07",
+      "conditions": [
+        {
+          "field": "program.country",
+          "values": [
+            "NO"
+          ],
+          "evidence": "Norway",
+          "role": "scope",
+          "op": "set",
+          "scope": "turn",
+          "when_country": "",
+          "match": "any"
+        }
+      ],
+      "diff": [
+        {
+          "before": {
+            "field": "program.country",
+            "match": "any",
+            "role": "scope",
+            "status": "specified",
+            "values": [
+              "NO",
+              "SE"
+            ],
+            "when_country": ""
+          },
+          "after": {
+            "field": "program.country",
+            "when_country": "",
+            "role": "scope",
+            "match": "any",
+            "status": "specified",
+            "values": [
+              "NO"
+            ]
+          }
+        }
+      ]
+    }
+  }
+]

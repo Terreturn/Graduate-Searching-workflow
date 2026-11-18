@@ -62,13 +62,20 @@ CHANGE = record({
     "when_degree": choice(["", *DEGREES]),
     "values": array({"anyOf": [STRING, TUITION_CAP]}), "evidence": STRING,
 })
+QUESTION_DETAIL = record({
+    "field": choice([*FIELDS, "other"]), "when_degree": choice(["", *DEGREES]),
+    "when_country": STRING, "scope": choice(SCOPES),
+    "importance": choice(["required", "preferred"]), "evidence": STRING,
+})
+RESOLUTION = record({"id": STRING, "action": choice(["answered", "withdrawn", "partial"]), "evidence": STRING})
 PROPOSAL = record({
     "intent": choice(INTENTS), "changes": array(CHANGE),
     "background_changes": array(record({
         "op": choice(["set", "add", "remove", "unset"]), "field": choice(BACKGROUND_FIELDS),
         "values": array(STRING), "evidence": STRING,
     })),
-    "questions": array(STRING), "summary": STRING,
+    "questions": array(STRING), "question_details": array(QUESTION_DETAIL),
+    "question_resolutions": array(RESOLUTION), "summary": STRING,
 })
 
 
@@ -155,11 +162,22 @@ def degree_branches(rules):
 
 def validate(proposal, message):
     # Past proposal journals predate when_degree. Model output uses the full current schema.
-    normalized = dict(proposal)
+    normalized = {"question_details": [], "question_resolutions": [], **proposal}
     if isinstance(proposal.get("changes"), list):
         normalized["changes"] = [{"when_degree": "", **c} if isinstance(c, dict) else c
                                  for c in proposal["changes"]]
     validate_schema(normalized, PROPOSAL)
+    details = normalized["question_details"]
+    if "question_details" in proposal and len(details) != len(proposal["questions"]):
+        raise ValueError("Each new clarification needs a scope and source.")
+    for item in [*details, *normalized["question_resolutions"]]:
+        if not item["evidence"].strip() or item["evidence"] not in message:
+            raise ValueError("Clarifications and resolutions must quote the current utterance.")
+    for detail in details:
+        if detail["when_country"] and not re.fullmatch("[A-Z]{2}", detail["when_country"]):
+            raise ValueError("Invalid clarification country.")
+        if proposal["intent"] == "compare" and detail["scope"] == "goal":
+            raise ValueError("A hypothetical question cannot change the durable goal.")
     intent = proposal["intent"]
     if intent in {"separate_goal", "undo", "inspect"} and (proposal["changes"] or proposal["background_changes"]):
         raise ValueError(f"{intent} 不接受字段修改")

@@ -86,6 +86,7 @@ Present results, module changes, source descriptions, clarifying questions and e
 | `personal_background`、`background_diff` | 已提交的背景事实、版本与本轮变化 |
 | `temporary_conditions` | 本轮全部临时操作、作用范围和差分 |
 | `proposal.changes`、`proposal.questions` | 理解模型提议的操作、原话依据和仍需澄清之处 |
+| `pending_questions`、`before_pending_questions` | 查看本轮待澄清问题、来源轮次、用户原话、已补充的答案，以及修改前的长期问题。长期问题的增减和补充会产生目标新版本。旧记录仅有问题文本时，按原轮次保留。 |
 | `base_version`、`version`、`diff` | 核对持久目标从哪一版变到哪一版，以及各条规则的旧值和新值 |
 | `rules` | 传递给后续会话的持久搜索范围、条件和偏好 |
 | `temporary_diff`、`effective_rules` | 本轮对比或展示所需的调整与应用后的完整规则 |

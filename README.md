@@ -82,6 +82,14 @@ flowchart TD
 
 **Master's screening.** Training route and thesis requirement are separate conditions. A tuition cap specifies the currency, billing period, fee category and whether mandatory fees count. An international per-term rate alone cannot establish a whole-program cap. Funding coverage and funding mechanism are also separate, so a competitive award does not establish a guarantee upon admission.
 
+### Screening update · 2026-11-17
+
+An unresolved hard requirement stays with its goal, degree and country until the applicant answers or withdraws it. Each turn saves the questions that applied at that time. For example, a master's tuition limit of 40,000 with no currency or billing period allows discovery to continue while the affected master's results await clarification. Eligible PhD results can still appear.
+
+For country-specific rules, both researchers and the auditor verify the delivery campus's country. The table renders tuition, stipend amounts and deadlines from their agreed values and links to the pages used for the displayed facts.
+
+All 42 offline regression tests passed. A three-turn live intake test also confirmed that a master's tuition cap survives an unrelated preference change and takes effect once the applicant supplies the missing currency and billing period.
+
 ## Data, reports and checks
 
 | Path | Purpose |

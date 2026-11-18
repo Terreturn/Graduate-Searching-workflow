@@ -1,4 +1,5 @@
 """Decompose one turn, then check its user-facing language before storage."""
+from clarifications import update_questions
 from model_call import call_model as _call_model
 from rules import PROPOSAL, STRING, array, choice, record, validate, validate_schema
 
@@ -14,6 +15,7 @@ def decompose(context, message, correction=None):
         payload["previous_validation_error"] = correction
     proposal = _call_model("decompose.md", payload, PROPOSAL)
     validate(proposal, message)
+    update_questions(context.get("pending_questions", []), "", message, proposal)
     original = {"summary": proposal["summary"], "questions": proposal["questions"]}
     reply = original
     recent = [turn["message"] for turn in context.get("recent", [])]

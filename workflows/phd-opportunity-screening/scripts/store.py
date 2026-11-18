@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sqlite3
 
+from clarifications import question_snapshot, update_questions
 from rules import apply_changes, difference, validate
 from personal_background import apply_background
 from temporary_conditions import from_legacy, resolve
@@ -112,26 +113,39 @@ class GoalStore:
                         (owner, goal, event["turn_id"])).fetchone()
                 temp = ({"turn_id": event["turn_id"], "conditions": json.loads(temp_row["conditions"]),
                          "diff": json.loads(temp_row["diff"])} if temp_row else from_legacy(event))
+            questions = question_snapshot(event)
+            durable["pending_questions"] = [q for q in questions if q["scope"] == "goal"]
+            temp["pending_questions"] = [q for q in questions if q["scope"] != "goal"]
             return {"personal_background": profile, "goal_store": durable, "temporary_conditions": temp}
         finally:
             self.db.rollback()
 
     def snapshot(self, owner, goal):
-        row = self.db.execute("SELECT version, rules FROM goals WHERE owner=? AND goal=?",
-                              (owner, goal)).fetchone()
+        row = self.db.execute(
+            "SELECT g.version, g.rules, (SELECT json_extract(t.result, '$.pending_questions') "
+            "FROM turns t WHERE t.owner=g.owner AND t.goal=g.goal AND t.version=g.version "
+            "AND t.version>t.base ORDER BY t.event DESC LIMIT 1) AS questions "
+            "FROM goals g WHERE g.owner=? AND g.goal=?", (owner, goal)).fetchone()
+        return self._goal_snapshot(owner, goal, row)
+
+    @staticmethod
+    def _goal_snapshot(owner, goal, row):
+        questions = json.loads(row["questions"] or "[]") if row else []
         return {"owner": owner, "goal": goal, "version": row["version"] if row else 0,
-                "rules": json.loads(row["rules"]) if row else []}
+                "rules": json.loads(row["rules"]) if row else [],
+                "pending_questions": [q for q in questions if q["scope"] == "goal"]}
 
     def snapshot_at(self, owner, goal, version):
         if version == 0:
-            return {"owner": owner, "goal": goal, "version": 0, "rules": []}
+            return self._goal_snapshot(owner, goal, None)
         row = self.db.execute(
-            "SELECT result FROM turns WHERE owner=? AND goal=? AND version=? AND version>base "
+            "SELECT version,json_extract(result,'$.rules') AS rules, "
+            "json_extract(result,'$.pending_questions') AS questions FROM turns "
+            "WHERE owner=? AND goal=? AND version=? AND version>base "
             "ORDER BY event LIMIT 1", (owner, goal, version)).fetchone()
         if not row:
             raise ValueError(f"找不到该目标的 v{version}")
-        result = json.loads(row["result"])
-        return {name: result[name] for name in ("owner", "goal", "version", "rules")}
+        return self._goal_snapshot(owner, goal, row)
 
     def existing(self, owner, goal, turn, message):
         row = self.db.execute(
@@ -193,14 +207,20 @@ class GoalStore:
                     raise ValueError("旧首轮之后已有持久修改，不能自动重解析")
                 initial_rules = []
             rules = apply_changes(initial_rules, [c for c in changes if c["scope"] == "goal"])
+            before_pending = current["pending_questions"]
+            pending = update_questions(before_pending, turn, message, proposal)
             if proposal["intent"] == "undo":
                 row = self.db.execute(
                     "SELECT result FROM turns WHERE owner=? AND goal=? AND version>base "
                     "ORDER BY event DESC LIMIT 1", (owner, goal)).fetchone()
                 if row:
-                    rules = json.loads(row[0])["before_rules"]
+                    previous = json.loads(row[0])
+                    rules = previous["before_rules"]
+                    pending = previous.get("before_pending_questions", [])
             diff = difference(before, rules)
-            version = current["version"] + int(bool(diff))
+            durable_pending = [q for q in pending if q["scope"] == "goal"]
+            goal_changed = bool(diff) or durable_pending != before_pending
+            version = current["version"] + int(goal_changed)
             temp, effective = resolve(turn, rules, changes)
             facts, bg_diff = apply_background(old_profile["facts"], proposal["background_changes"],
                                               goal, reparse_of or turn)
@@ -211,6 +231,7 @@ class GoalStore:
                 "version": version, "proposal": proposal, "before_rules": before,
                 "diff": diff, "rules": rules, "temporary_diff": temp["diff"],
                 "effective_rules": effective,
+                "before_pending_questions": before_pending, "pending_questions": pending,
                 "personal_background": profile, "background_diff": bg_diff,
                 "background_base_version": old_profile["version"], "temporary_conditions": temp,
             }
@@ -221,7 +242,7 @@ class GoalStore:
                     "INSERT INTO personal_background VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET "
                     "version=excluded.version,facts=excluded.facts",
                     (owner, profile["version"], encode(facts)))
-            if diff:
+            if goal_changed:
                 self.db.execute(
                     "INSERT INTO goals VALUES(?,?,?,?) ON CONFLICT(owner,goal) DO UPDATE SET "
                     "version=excluded.version,rules=excluded.rules",

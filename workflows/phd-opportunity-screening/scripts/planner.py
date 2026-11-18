@@ -1,6 +1,7 @@
 """Plan where to search from a single stored turn and the local source catalog."""
 import re
 
+from clarifications import question_context
 from model_call import call_model
 from rules import STRING, array, choice, degree_branches, degree_scope, record, validate_schema
 from sources import CATALOG, find_sources
@@ -21,7 +22,7 @@ def plan_search(event, catalog_path=CATALOG):
     payload = {
         "utterance": event["message"],
         "summary": event["proposal"]["summary"],
-        "open_questions": event["proposal"].get("questions", []),
+        **question_context(event),
         "effective_rules": event["effective_rules"],
         "rules_by_degree": degree_branches(event["effective_rules"]),
         "personal_background": [{"field": f["field"], "value": f["value"]}

@@ -1,10 +1,11 @@
 """Blind discovery, independent evidence collection and source-grounded publication."""
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from decimal import Decimal
 import re
 from urllib.parse import urlsplit, urlunsplit
 
+from clarifications import question_context
+from public_facts import OBSERVATIONS, rate_key, render_fact
 from model_call import MODEL, call_model
 from planner import plan_search
 from rules import (DEGREES, STRING, TUITION_RATE, array, choice, degree_branches, degree_scope,
@@ -23,10 +24,13 @@ IDENTITY = record({"subject": STRING, "institution": STRING, "cycle": STRING,
                    "degree": choice(["", *DEGREES]), "qualification": STRING, "track": STRING, "campus": STRING})
 DISCOVERY = record({"state": STATE, "candidates": array(IDENTITY)})
 URLS = array(STRING)
-CELL = record({"field": choice(FIELDS), "value": STRING, "urls": URLS})
+TEXT_CELL = {"field": choice(FIELDS), "value": STRING, "urls": URLS}
+CELL = {"anyOf": [record(TEXT_CELL), *(record({**TEXT_CELL, "field": choice([field]), "observation": schema})
+                                     for field, schema in OBSERVATIONS.items())]}
 DECISION = {"id": STRING, "decision": choice(["confirmed", "not_applicable", "unknown",
                                              "contradicted", "conflict"]), "urls": URLS}
-REQUIREMENT = {"anyOf": [record(DECISION), record({**DECISION, "tuition_rate": TUITION_RATE})]}
+REQUIREMENT = {"anyOf": [record(DECISION), record({**DECISION, "tuition_rate": TUITION_RATE}),
+                         record({**DECISION, "country_code": STRING})]}
 CHECK = record({"id": STRING, "rules": array(REQUIREMENT), "facts": array(CELL),
                 "evidence": array(record({"url": STRING, "excerpt": STRING}))})
 COLLECTION = record({"state": STATE, "checks": array(CHECK)})
@@ -107,7 +111,25 @@ def proof_urls(check):
             if item["excerpt"].strip() and url_key(item["url"])}
 
 
-def rules_for_candidate(candidate, rules):
+# Assigned ISO 3166-1 alpha-2 country/territory codes.
+COUNTRIES = frozenset("""
+AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ
+CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR
+GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM
+JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP
+MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY
+QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO
+TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW
+""".split())
+
+
+def degree_questions(pending, candidate):
+    degree = candidate.get("degree")
+    return [q for q in pending if q["importance"] == "required"
+            and (not degree or not q["when_degree"] or q["when_degree"] == degree)]
+
+
+def rules_for_candidate(candidate, rules, pending=()):
     degree = candidate.get("degree", "")
     if not degree and any(r.get("when_degree") for r in rules.values()):
         raise ValueError("带学位分支的候选项必须标明学位")
@@ -117,24 +139,75 @@ def rules_for_candidate(candidate, rules):
         if candidate.get(name):
             active["candidate_" + name] = {"field": "candidate." + name, "role": "scope", "match": "any",
                                            "status": "specified", "when_country": "", "values": [candidate[name]]}
+    if (any(r["when_country"] or r["field"] == "program.country" or
+            (r["field"] == "program.location" and any(v.startswith("country:") for v in r["values"]))
+            for r in active.values())
+            or any(q["when_country"] for q in degree_questions(pending, candidate))):
+        active["candidate_country"] = {"field": "candidate.country", "role": "scope", "match": "any",
+                                       "status": "specified", "when_country": "", "values": []}
     return active
 
 
-def supports(rule, item):
-    if item["decision"] == "not_applicable":
-        return bool(rule["when_country"])
+def country_of(decisions, proof):
+    decision = decisions.get("candidate_country", {})
+    code = decision.get("country_code")
+    pages = {url_key(u) for u in decision.get("urls", [])}
+    if decision.get("decision") == "confirmed" and code in COUNTRIES and pages and pages <= proof:
+        return code
+
+
+def supports(rule, item, country=None):
+    guard = rule["when_country"]
+    if guard and not country:
+        return False
+    if guard and guard != country:
+        return item["decision"] == "not_applicable"
     if item["decision"] != "confirmed":
         return False
+    if rule["field"] == "candidate.country":
+        return bool(country)
+    if rule["field"] in {"program.country", "program.location"} and country:
+        values = rule["values"]
+        codes = {v.removeprefix("country:") for v in values if not v.startswith("region:")}
+        if rule["match"] == "none" and country in codes:
+            return False
+        if rule["match"] == "all" and codes - {country}:
+            return False
+        if rule["match"] == "any" and len(codes) == len(values) and country not in codes:
+            return False
     if rule["field"] == "tuition.budget":
         return within_budget(rule["values"][0], item.get("tuition_rate"))
     return True
 
 
+def pending_in_scope(pending, rules):
+    levels = degree_scope(rules.values())
+    for degree in DEGREES if levels is None else levels:
+        for question in degree_questions(pending, {"degree": degree}):
+            country = question["when_country"]
+            if not country:
+                return True
+            geography = (r for r in rules_at_degree(rules, degree).values()
+                         if r["field"] in {"program.country", "program.location"}
+                         and r["when_country"] in {"", country})
+            if all(supports(r, {"decision": "confirmed"}, country) for r in geography):
+                return True
+    return False
+
+
+def indexed_decisions(items, rules):
+    if "candidate_country" in rules and not any(item["id"] == "candidate_country" for item in items):
+        # Checkpoints from older runs have no explicit jurisdiction proof.
+        items = [*items, {"id": "candidate_country", "decision": "unknown", "urls": []}]
+    return by_id(items, rules)
+
+
 def missing_rules(check, rules):
-    decisions = by_id(check["rules"], rules)
+    decisions = indexed_decisions(check["rules"], rules)
     cited = proof_urls(check)
+    country = country_of(decisions, cited)
     return [key for key, rule in rules.items()
-            if not supports(rule, decisions[key])
+            if not supports(rule, decisions[key], country)
             or not cited.intersection(map(url_key, decisions[key]["urls"]))]
 
 
@@ -151,8 +224,7 @@ def citation_choices(pair, rules):
 
     field_urls = {}
     for field in FIELDS:
-        group = {"funding", "tuition", "stipend", "duration"} if field == "funding" else {field}
-        urls = collect("facts", "field", group)
+        urls = collect("facts", "field", {field})
         if urls:
             field_urls[field] = urls
     return {"rules": {key: collect("rules", "id", {key}) for key in rules}, "cells": field_urls}
@@ -192,7 +264,7 @@ def table(headers, rows):
                      [headers, ["---"] * len(headers), *rows])
 
 
-def publish(audit_call, checks, candidates, rules, incomplete, limit):
+def publish(audit_call, checks, candidates, rules, incomplete, limit, pending=()):
     audit = audit_call["result"]
     candidates_by_id = {c["id"]: c for c in candidates}
     by_id(audit["rows"], candidates_by_id)
@@ -203,15 +275,27 @@ def publish(audit_call, checks, candidates, rules, incomplete, limit):
         raise ValueError("Duplicate publication columns.")
     labels = {url_key(link["url"]): safe_text(link["label"]) for link in audit["links"]}
     rows, blocked = [], []
+    if not candidates and pending_in_scope(pending, rules):
+        incomplete = True
     for row in audit["rows"]:
+        cid = row["id"]
+        candidate = candidates_by_id[cid]
+        pair = [checks[role][cid] for role in ROLES]
+        active = rules_for_candidate(candidate, rules, pending)
+        proofs = [proof_urls(c) for c in pair]
+        countries = [country_of({d["id"]: d for d in c["rules"]}, proof) for c, proof in zip(pair, proofs)]
+        country = countries[0] if countries[0] == countries[1] else None
+        if any(not q["when_country"] or not country or q["when_country"] == country
+               for q in degree_questions(pending, candidate)):
+            incomplete = True
+            continue
+        if "candidate_country" in active and not country:
+            incomplete = True
         if row["decision"] != "publish":
             continue
-        cid = row["id"]
-        pair = [checks[role][cid] for role in ROLES]
-        active = rules_for_candidate(candidates_by_id[cid], rules)
         choices = citation_choices(pair, active)
-        rules_out = by_id(row["rules"], active)
-        proofs = [proof_urls(c) for c in pair]
+        rules_out = indexed_decisions(row["rules"], active)
+        originals = [indexed_decisions(c["rules"], active) for c in pair]
         verified = set.union(*proofs) & visits & labels.keys()
         links = {}
         def backed(urls, allowed):
@@ -219,26 +303,37 @@ def publish(audit_call, checks, candidates, rules, incomplete, limit):
             return bool(keys) and all(key in allowed and key in verified for key in keys)
 
         valid = all(not missing_rules(c, active) for c in pair)
+        if "candidate_country" in active:
+            valid &= bool(country) and country_of(rules_out, verified) == country
+        tuition_rates = set()
         for key, rule in active.items():
             decision = rules_out[key]
-            original = [next(item for item in c["rules"] if item["id"] == key) for c in pair]
+            original = [items[key] for items in originals]
             eligible = set(map(url_key, choices["rules"][key]))
-            valid &= (supports(rule, decision)
+            valid &= (supports(rule, decision, country)
                       and all(item["decision"] == decision["decision"] for item in original)
                       and backed(decision["urls"], eligible))
             if valid and rule["field"] == "tuition.budget" and decision["decision"] == "confirmed":
                 rates = [item["tuition_rate"] for item in [*original, decision]]
-                valid = len({Decimal(rate["amount"]) for rate in rates}) == 1
+                agreed = {rate_key(rate) for rate in rates}
+                valid = len(agreed) == 1
+                tuition_rates.update(agreed)
         cells = {cell["field"]: cell for cell in row["cells"]}
         valid &= bool(required) and required <= set(cells) <= set(columns) and len(cells) == len(row["cells"])
+        display = {}
         for field, cell in cells.items():
+            value = render_fact(cell, pair, proofs, url_key, tuition_rates)
+            if value is None:
+                valid = False
+            else:
+                display[field] = safe_text(value)
             valid &= backed(cell["urls"], set(map(url_key, choices["cells"].get(field, []))))
             links.update((url_key(url), url) for url in cell["urls"])
         if not valid:
             blocked.append(cid)
             continue
         refs = [f'[{labels[key]}](<{url}>)' for key, url in links.items()]
-        rows.append([safe_text(cells[f]["value"]) if f in cells else "—" for f in columns] + [" · ".join(refs)])
+        rows.append([display.get(f, "—") for f in columns] + [" · ".join(refs)])
     incomplete |= audit["state"] == "incomplete" or bool(blocked)
     if limit is not None:
         rows = rows[:limit]
@@ -261,7 +356,7 @@ def research(event, catalog_path=CATALOG, checkpoint=lambda report: None):
              if rule["role"] in {"scope", "required"}
              and (rule["status"] != "unrestricted" or rule.get("when_degree"))}
     context = {"utterance": event["message"], "summary": event["proposal"]["summary"],
-               "open_questions": event["proposal"].get("questions", []),
+               **question_context(event),
                "effective_rules": effective, "rules_by_degree": degree_branches(effective), "hard_rules_by_id": rules,
                "background": [{k: fact[k] for k in ("field", "value")}
                               for fact in event.get("personal_background", {}).get("facts", [])],
@@ -291,7 +386,7 @@ def research(event, catalog_path=CATALOG, checkpoint=lambda report: None):
         ids = [c["id"] for c in candidates]
         checks = {r: {} for r in ROLES}
         if candidates:
-            applicable = {c["id"]: rules_for_candidate(c, rules) for c in candidates}
+            applicable = {c["id"]: rules_for_candidate(c, rules, context.get("pending_questions", [])) for c in candidates}
             payload = {**context, "candidates": candidates, "candidate_rules_by_id": applicable,
                        "allowed_fields": FIELDS}
             collected = independent("collect.md", {r: payload for r in ROLES}, COLLECTION,
@@ -336,7 +431,7 @@ def review_collections(report, checkpoint):
                 checks[role][item["id"]] = item
     if any(set(checks[r]) != set(ids) for r in ROLES):
         raise ValueError("Incomplete independent collections.")
-    applicable = {c["id"]: rules_for_candidate(c, rules) for c in candidates}
+    applicable = {c["id"]: rules_for_candidate(c, rules, context.get("pending_questions", [])) for c in candidates}
     eligible = {cid: citation_choices([checks[r][cid] for r in ROLES], applicable[cid]) for cid in ids}
     payload = {**context, "candidates": candidates, "checks": checks, "eligible_citations": eligible,
                "candidate_rules_by_id": applicable, "research_incomplete": incomplete, "allowed_fields": FIELDS}
@@ -348,11 +443,12 @@ def review_collections(report, checkpoint):
         audit = live("audit-search.md", payload, AUDIT, auditor=True)
         report["audit"] = audit
         checkpoint(report)
-        output, blocked = publish(audit, checks, candidates, rules, incomplete, limit)
+        output, blocked = publish(audit, checks, candidates, rules, incomplete, limit, context.get("pending_questions", []))
         if not blocked:
             break
         payload["citation_repair"] = {"blocked_candidate_ids": blocked,
-                                     "instruction": "Use only an opened eligible URL for its exact field or rule. "
+                                     "instruction": "Check the country, decision, typed value and selected source wording. "
+                                                    "Use only an opened eligible URL for its exact field or rule. "
                                      "Supply a link label for each. Omit a row if independent support is lacking."}
     report.update(state="completed", publication_blocks=blocked, table=output)
     checkpoint(report)

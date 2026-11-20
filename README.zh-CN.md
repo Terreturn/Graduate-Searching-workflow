@@ -1,6 +1,6 @@
 # 硕士与博士项目及导师筛选工作流
 
-[English](README.md) · **简体中文** · [更新日志](CHANGELOG.md#changelog-zh)
+[English](README.md) · **简体中文** · [更新日志（英文）](CHANGELOG.md)
 
 ## 项目描述
 

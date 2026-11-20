@@ -1,6 +1,6 @@
 # Graduate Searching Workflow
 
-**English** · [简体中文](README.zh-CN.md) · [Changelog](CHANGELOG.md#changelog-en)
+**English** · [简体中文](README.zh-CN.md) · [Changelog](CHANGELOG.md)
 
 ## Description
 

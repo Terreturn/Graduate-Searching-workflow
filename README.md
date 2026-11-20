@@ -2,7 +2,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-**v1.0.0 · School and advisor screening**
+**v1.1.0 · School and advisor screening**
 
 Find master's and PhD programs, potential supervisors, or both. Refine your requirements over multiple turns. When new evidence is needed, two search agents independently open original sources and a third agent audits their findings. The workflow returns a table with source links in the language of the request.
 
@@ -87,7 +87,7 @@ flowchart TD
 
 **Master's screening.** Training route and thesis requirement are separate conditions. A tuition cap specifies the currency, billing period, fee category and whether mandatory fees count. An international per-term rate alone cannot establish a whole-program cap. Funding coverage and funding mechanism are also separate, so a competitive award does not establish a guarantee upon admission.
 
-## School and advisor searches in v1.0.0
+## School and advisor searches in v1.1.0
 
 Use the same `turn`, `plan` and `search` commands for program searches, advisor searches and requests for advisor–program pairs. Intake compares each branch’s effective requirements with the previous turn and saves both snapshots and their differences to SQLite. The router reads those differences, changes to open questions and explicit one-turn tasks to select the branches to run. “Find an advisor at UBC” uses UBC as a filter on the advisor. It starts a school search only if the school branch also has work.
 

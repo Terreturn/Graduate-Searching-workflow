@@ -5,6 +5,7 @@ import re
 from personal_background import FIELDS as BACKGROUND_FIELDS
 
 
+BRANCHES = ("school", "advisor")
 DEGREES = ("master", "PhD", "professional_doctorate")
 FIELDS = {
     "search.object": ("scope", {"program", "position", "supervisor"}),
@@ -17,6 +18,12 @@ FIELDS = {
     "program.method": ("required preferred", None),
     "program.track": ("required preferred", {"research", "coursework", "mixed"}),
     "program.thesis": ("required preferred", {"required", "optional", "unavailable"}),
+    "supervisor.name": ("scope preferred", None),
+    "supervisor.method": ("required preferred", None),
+    "supervisor.recruitment": ("required preferred", None),
+    "supervisor.mentoring": ("required preferred", None),
+    "supervisor.background": ("required preferred", None),
+    "program.campus": ("scope preferred", None),
     "supervisor.topic": ("required preferred", None),
     "admission.intake": ("scope preferred", None),
     "eligibility.applicant": ("required", None),
@@ -57,18 +64,23 @@ TUITION_RATE = record({
 })
 TUITION_CAP = record({**TUITION_RATE["properties"], "operator": choice(["at_most", "below"])})
 CHANGE = record({
-    "op": choice(OPERATIONS), "scope": choice(SCOPES), "field": choice(FIELDS),
+    "branch": choice(BRANCHES), "op": choice(OPERATIONS), "scope": choice(SCOPES), "field": choice(FIELDS),
     "role": choice(ROLES), "match": choice(MATCHES), "when_country": STRING,
     "when_degree": choice(["", *DEGREES]),
     "values": array({"anyOf": [STRING, TUITION_CAP]}), "evidence": STRING,
 })
 QUESTION_DETAIL = record({
-    "field": choice([*FIELDS, "other"]), "when_degree": choice(["", *DEGREES]),
+    "branch": choice(BRANCHES), "field": choice([*FIELDS, "other"]), "when_degree": choice(["", *DEGREES]),
     "when_country": STRING, "scope": choice(SCOPES),
     "importance": choice(["required", "preferred"]), "evidence": STRING,
 })
 RESOLUTION = record({"id": STRING, "action": choice(["answered", "withdrawn", "partial"]), "evidence": STRING})
 PROPOSAL = record({
+    "view": choice(["inherit", "school", "advisor", "joined", "separate"]), "language": STRING,
+    "tasks": array(record({"branch": choice(BRANCHES), "action": choice(["more", "refresh", "link", "lookup"]),
+                           "fields": array(choice(["supervisor","topic","research_project","mentoring","supervisor_background",
+                               "recruitment","supervision","funding","deadline","tuition","thesis","track","campus","stipend","status"])),
+                           "evidence": STRING})),
     "intent": choice(INTENTS), "changes": array(CHANGE),
     "background_changes": array(record({
         "op": choice(["set", "add", "remove", "unset"]), "field": choice(BACKGROUND_FIELDS),
@@ -162,11 +174,18 @@ def degree_branches(rules):
 
 def validate(proposal, message):
     # Past proposal journals predate when_degree. Model output uses the full current schema.
-    normalized = {"question_details": [], "question_resolutions": [], **proposal}
+    normalized = {"tasks": [], "language": "", "view": "inherit", "question_details": [], "question_resolutions": [], **proposal}
     if isinstance(proposal.get("changes"), list):
-        normalized["changes"] = [{"when_degree": "", **c} if isinstance(c, dict) else c
+        normalized["changes"] = [{"when_degree": "", "branch": branch_of(c), **c} if isinstance(c, dict) else c
                                  for c in proposal["changes"]]
+    normalized["tasks"] = [{"fields":[], **t} for t in normalized["tasks"]]
+    normalized["question_details"] = [{"branch": branch_of(q), **q} for q in normalized["question_details"]]
     validate_schema(normalized, PROPOSAL)
+    for task in normalized["tasks"]:
+        if not task["evidence"].strip() or task["evidence"] not in message:
+            raise ValueError("A one-turn search task requires verbatim evidence.")
+    if any(c["field"].startswith("supervisor.") and branch_of(c) != "advisor" for c in proposal["changes"]):
+        raise ValueError("Supervisor fields belong to the advisor branch.")
     details = normalized["question_details"]
     if "question_details" in proposal and len(details) != len(proposal["questions"]):
         raise ValueError("Each new clarification needs a scope and source.")
@@ -230,8 +249,18 @@ def validate(proposal, message):
             raise ValueError("每轮的展示数量只能设置为一个值")
 
 
+def branch_of(item):
+    if item.get("role") == "output":
+        return "school"
+    if "branch" in item:
+        return item["branch"]
+    advisor = item.get("field","").startswith("supervisor.") or (
+        item.get("field") == "search.object" and item.get("values") == ["supervisor"])
+    return "advisor" if advisor else "school"
+
+
 def key(rule):
-    return (rule["field"], rule.get("when_degree", ""), rule["when_country"], rule["role"], rule["match"])
+    return (branch_of(rule), rule["field"], rule.get("when_degree", ""), rule["when_country"], rule["role"], rule["match"])
 
 
 def apply_changes(rules, changes):
@@ -253,6 +282,7 @@ def apply_changes(rules, changes):
                 continue
             values = existing - values if op == "remove" else existing | values
         indexed[identity] = {
+            **({"branch": "advisor"} if branch_of(change) == "advisor" else {}),
             **{k: change[k] for k in ("field", "when_country", "role", "match")},
             **({"when_degree": change["when_degree"]} if change.get("when_degree") else {}),
             "status": "unrestricted" if op == "unrestricted" else "specified",

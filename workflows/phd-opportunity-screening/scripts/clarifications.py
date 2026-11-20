@@ -1,6 +1,9 @@
 """Scoped clarification snapshots stored with the turn that used them."""
 
 
+from rules import branch_of
+
+
 def question_snapshot(event):
     if not event:
         return []
@@ -31,7 +34,7 @@ def update_questions(previous, turn, message, proposal):
             continue
         if question["field"] != "other":
             operations = {"set", "add", "unrestricted"} if change["action"] == "answered" else {"unset", "unrestricted"}
-            if not any(c["field"] == question["field"] and c.get("when_degree", "") == question["when_degree"]
+            if not any(branch_of(c) == branch_of(question) and c["field"] == question["field"] and c.get("when_degree", "") == question["when_degree"]
                        and c["when_country"] == question["when_country"] and c["scope"] == question["scope"]
                        and c["op"] in operations
                        and (question["importance"] != "required" or c["role"] in {"scope", "required"})
@@ -43,7 +46,7 @@ def update_questions(previous, turn, message, proposal):
         identity = ("field", "when_degree", "when_country", "importance", "scope")
         if question["field"] != "tuition.budget":
             identity += ("question",)
-        if not any(all(old[k] == question[k] for k in identity) for old in pending.values()):
+        if not any(branch_of(old) == branch_of(question) and all(old[k] == question[k] for k in identity) for old in pending.values()):
             pending[question["id"]] = question
     return list(pending.values())
 
@@ -53,7 +56,7 @@ def question_context(event):
     def superseded(question):
         return question["scope"] == "goal" and any(
             c["op"] in {"set", "unset", "unrestricted"} and c["field"] == question["field"]
-            and c.get("when_country", "") == question["when_country"]
+            and branch_of(c) == branch_of(question) and c.get("when_country", "") == question["when_country"]
             and c.get("when_degree", "") == question["when_degree"]
             and (question["importance"] != "required" or c["role"] in {"scope", "required"})
             for c in local)

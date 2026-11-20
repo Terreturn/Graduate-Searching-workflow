@@ -8,8 +8,8 @@ import sys
 
 from decomposer import decompose
 from model_call import EFFORT, MODEL, ROOT
-from planner import plan_search
-from research import research
+from result_store import browse
+from search_flow import execute, preview
 from sources import CATALOG
 from store import GoalStore, StaleGoal
 from test_reports import TEST_DIR, reserve_report, start_test, update_test, write_report
@@ -75,6 +75,9 @@ def main():
     commands.add_parser("history")
     modules = commands.add_parser("modules", help="读取个人背景、目标和本轮临时条件")
     modules.add_argument("--turn", help="按轮次读取当时记录的三个模块")
+    saved = commands.add_parser("results", help="浏览已核实的项目、导师、关系和来源")
+    saved.add_argument("--turn", help="按需求轮次查看历史结果")
+    saved.add_argument("--branch", choices=["school","advisor"])
     plan = commands.add_parser("plan", help="根据已保存的需求规划搜索方向")
     plan.add_argument("--turn", help="指定轮次，默认使用该目标的最新轮次")
     plan.add_argument("--catalog", type=Path, default=CATALOG, help="来源库 SQLite 文件")
@@ -90,7 +93,7 @@ def main():
     if args.action not in {"turn", "test-start"} and not args.db.is_file():
         parser.exit(1, "数据库不存在\n")
     try:
-        store = GoalStore(args.db, read_only=args.action in {"show", "history", "modules", "plan", "search"})
+        store = GoalStore(args.db, read_only=args.action in {"show", "history", "modules", "results"})
         try:
             if args.action in {"turn", "reparse-initial"}:
                 try:
@@ -116,6 +119,8 @@ def main():
                 result = store.history(args.user, args.goal)
             elif args.action == "modules":
                 result = store.modules(args.user, args.goal, args.turn)
+            elif args.action == "results":
+                result = browse(store,store.turn_result(args.user,args.goal,args.turn),args.branch)
             elif args.action == "search":
                 event = store.turn_result(args.user, args.goal, args.turn)
                 if event is None:
@@ -123,14 +128,14 @@ def main():
                 if args.save_test:
                     _, report = reserve_report(TEST_DIR)
                     print(report, file=sys.stderr, flush=True)
-                    result = research(event, args.catalog, lambda data: write_report(report, data))
+                    result = execute(store, event, args.catalog, lambda data: write_report(report, data))["table"]
                 else:
-                    result = research(event, args.catalog)
+                    result = execute(store, event, args.catalog)["table"]
             elif args.action == "plan":
                 event = store.turn_result(args.user, args.goal, args.turn)
                 report = reserve_report(TEST_DIR)[1] if args.save_test else None
                 try:
-                    result = plan_search(event, args.catalog)
+                    result = preview(store, event, args.catalog)
                     if report:
                         write_report(report, result)
                 except BaseException:

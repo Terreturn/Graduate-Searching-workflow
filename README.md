@@ -2,7 +2,9 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-Find and compare master's and PhD programs using requirements you can refine over multiple turns. Two search agents independently check candidate programs against original sources. A third agent audits their evidence before the workflow returns a table with links. Ask in English or Chinese to get the answer in the language of your request.
+**v1.0.0 · School and advisor screening**
+
+Find master's and PhD programs, potential supervisors, or both. Refine your requirements over multiple turns. When new evidence is needed, two search agents independently open original sources and a third agent audits their findings. The workflow returns a table with source links in the language of the request.
 
 For example, you can require guaranteed full funding for a PhD while allowing a self-funded master's with total tuition up to CAD 40,000. The two degree levels share a goal but keep their own requirements. A one-turn request such as “only show research-based options this time” applies to that turn.
 
@@ -58,19 +60,22 @@ python3 "$WF/scripts/goals.py" --user demo --goal canada search --turn t02 --sav
 
 ```mermaid
 flowchart TD
-    T[Request or follow-up] --> I[Intake and language check]
-    I --> S[Applicant background, saved goal, turn conditions]
-    S --> P[Planner resolves degree-specific requirements]
-    C[(Tagged source catalog)] --> P
-    P --> A[Search A: directories to original sources]
-    P --> B[Search B: institutions and issuers]
-    A --> U[Merge candidate identities]
-    B --> U
-    U --> X[Independent evidence check A]
-    U --> Y[Independent evidence check B]
-    X --> R[Final audit and citation checks]
+    T[Request or follow-up] --> S[Save background, goal rules and turn conditions]
+    S --> D[Route the committed school and advisor changes]
+    D -->|School change| P[School and program search]
+    D -->|Advisor change| A[Advisor search]
+    D -->|Display only| V[Read saved results]
+    K[(Verified facts and source links in SQLite)] -.-> P
+    K -.-> A
+    K -.-> V
+    C[(Source catalog)] -.-> P
+    C -.-> A
+    P --> X[Fill school evidence gaps and audit new facts]
+    A --> Y[Fill advisor evidence gaps and audit new facts]
+    X --> R[Store results and verified supervision links]
     Y --> R
-    R --> O[Table with source links]
+    R --> O[Render the requested table with sources]
+    V --> O
 ```
 
 | Stage | What happens |
@@ -82,7 +87,32 @@ flowchart TD
 
 **Master's screening.** Training route and thesis requirement are separate conditions. A tuition cap specifies the currency, billing period, fee category and whether mandatory fees count. An international per-term rate alone cannot establish a whole-program cap. Funding coverage and funding mechanism are also separate, so a competitive award does not establish a guarantee upon admission.
 
-### Screening update · 2026-11-17
+## School and advisor searches in v1.0.0
+
+Use the same `turn`, `plan` and `search` commands for program searches, advisor searches and requests for advisor–program pairs. Intake compares each branch’s effective requirements with the previous turn and saves both snapshots and their differences to SQLite. The router reads those differences, changes to open questions and explicit one-turn tasks to select the branches to run. “Find an advisor at UBC” uses UBC as a filter on the advisor. It starts a school search only if the school branch also has work.
+
+The four-turn live acceptance test on 2026-11-20 used the same UBC goal throughout.
+
+| Turn | What the applicant requested | Branches started | Result |
+| --- | --- | --- | --- |
+| 1 | Find the Statistics MSc at UBC Vancouver and its official page. | School only | Saved the program and campus. |
+| 2 | Find Paul Gustafson's research interests and link him to the MSc. | Advisor only | Reused the saved program and verified the advisor's link to its thesis pathway. |
+| 3 | Require a thesis option and public evidence of graduate thesis supervision. | School and advisor, in parallel | The worker intervals overlapped. Both conditions were verified for the same pair. |
+| 4 | Show only the first verified pair. | Neither | Read the same pair and sources from SQLite with **zero web calls**. |
+
+Each selected branch checks the user's saved facts before searching. It can read the other branch's records. A verified supervision link identifies the person, program, degree, campus and training pathway. Faculty directories, conference proceedings, scholarly indexes, project registers and thesis repositories help locate evidence. Publishing a new link requires two independent readings and an audit of the sources documenting supervision for that program.
+
+Reuse is field-specific. Recruitment, deadline and status facts have a seven-day window. Current program facts generally have a thirty-day window. Documented mentoring history can be reused across sessions. When a new requirement needs evidence, the branch can keep the known candidate and check the missing fields. Asking for more candidates or an explicit refresh creates a one-turn search task.
+
+**Release checks.** All 56 offline regression tests passed. All four live acceptance turns passed, including a recovery that reused earlier evidence. Reopening SQLite reproduced the same pair, sources and table for turns 3 and 4. To run a fresh live example, choose a new database path. The runner saves the questions, database changes, actual worker intervals, web calls and answers under `runs/test/`. The last command reads the saved advisor snapshot offline.
+
+```bash
+DB=runs/workflows/advisor-demo/goals.sqlite3
+python3 -B "$WF/evals/verify_branches.py" --db "$DB"
+python3 "$WF/scripts/goals.py" --db "$DB" --user demo --goal ubc results --turn q3 --branch advisor
+```
+
+## Screening update · 2026-11-17
 
 An unresolved hard requirement stays with its goal, degree and country until the applicant answers or withdraws it. Each turn saves the questions that applied at that time. For example, a master's tuition limit of 40,000 with no currency or billing period allows discovery to continue while the affected master's results await clarification. Eligible PhD results can still appear.
 

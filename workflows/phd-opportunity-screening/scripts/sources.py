@@ -9,7 +9,8 @@ from rules import DEGREES
 
 CATALOG = Path(__file__).resolve().parents[1] / "data" / "sources.sqlite3"
 KINDS = ("site", "post", "announcement")
-INFO_TYPES = ("program", "vacancy", "funding", "supervisor_lead", "application_experience", "resource_list", "ranking")
+INFO_TYPES = ("program", "vacancy", "funding", "supervisor_lead", "application_experience", "resource_list", "ranking",
+              "research_publication", "conference", "research_project", "faculty_directory", "supervision_record")
 RANKING_SCOPES = ("overall", "subject", "graduate_school", "phd_program")
 RANKING_FIELDS = ("publisher", "ranking_scope", "ranking_object", "ranking_year", "disciplines")
 
@@ -60,6 +61,7 @@ def find_sources(*, regions=(), degrees=(), info_type=None, kind=None, ranking_s
         db.row_factory = sqlite3.Row
         records = [dict(row) for row in db.execute(query, params)]
     for record in records:
+        record["capabilities"] = json.loads(record.get("capabilities", "[]"))
         record["degrees"] = json.loads(record.get("degrees", "[]"))
         record["regions"] = json.loads(record["regions"])
         record["info_types"] = json.loads(record["info_types"])

@@ -68,6 +68,34 @@ class ResearchTests(unittest.TestCase):
         self.audit["result"]["rows"][0]["cells"][0]["urls"] = ["https://invented.invalid/"]
         self.assertEqual(self.render()[1], ["C1"])
 
+    def test_audited_cell_only_keeps_sources_supporting_its_exact_wording(self):
+        other = "https://example.edu/graduate/funding"
+        b = self.checks["B"]["C1"]
+        b["facts"] = [{"field":"funding","value":"Stipend and tuition coverage","urls":[other]}]
+        b["evidence"].append({"url":other,"excerpt":"Stipend and tuition coverage."})
+        self.audit["web"][0]["results"].append({"url":other,"title":"Funding"})
+        self.audit["result"]["links"].append({"url":other,"label":"Program policy"})
+        self.audit["result"]["rows"][0]["cells"][0]["urls"] = [PAGE,other]
+        output, blocked = self.render()
+        self.assertFalse(blocked)
+        self.assertIn(PAGE,output)
+        self.assertNotIn(other,output)
+        self.audit["result"]["rows"][0]["cells"][0]["urls"].append("https://unopened.invalid")
+        self.assertEqual(self.render()[1],["C1"])
+
+    def test_mentoring_summary_does_not_publish_a_disputed_year(self):
+        from research import available_cells, citation_choices, with_condition_facts
+        rule = {**RULE,"field":"supervisor.mentoring","values":["Documented graduate thesis supervision"]}
+        active = {"C1":{"R1":rule}}
+        for role,year in [("A","2020"),("B","2021")]:
+            self.checks[role]["C1"]["facts"] = [{"field":"mentoring","value":"Supervised a thesis in "+year,
+                                                "urls":[PAGE]}]
+        checks = with_condition_facts(self.checks,active,{"language":"en"})
+        pair = [checks[r]["C1"] for r in ("A","B")]
+        offered = available_cells(pair,citation_choices(pair,active["C1"]))
+        self.assertEqual([c["value"] for c in offered],["Documented graduate thesis supervision"])
+        self.assertFalse(any("202" in c["value"] for c in offered))
+
     def test_batched_web_trace_keeps_opened_pages_and_excludes_snippets_or_errors(self):
         hits = [{"url": PAGE, "title": "Terms", "ref_id": "turn3view1"},
                 {"url": "https://example.edu/snippet", "title": "Overview", "ref_id": "turn3search1"},

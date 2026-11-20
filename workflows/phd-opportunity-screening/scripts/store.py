@@ -4,6 +4,8 @@ from pathlib import Path
 import sqlite3
 
 from clarifications import question_snapshot, update_questions
+from routing import branch_changes, search_rules
+from rules import BRANCHES
 from rules import apply_changes, difference, validate
 from personal_background import apply_background
 from temporary_conditions import from_legacy, resolve
@@ -113,6 +115,8 @@ class GoalStore:
                         (owner, goal, event["turn_id"])).fetchone()
                 temp = ({"turn_id": event["turn_id"], "conditions": json.loads(temp_row["conditions"]),
                          "diff": json.loads(temp_row["diff"])} if temp_row else from_legacy(event))
+            if event:
+                durable["branches"] = {b: search_rules(durable["rules"], b) for b in BRANCHES}
             questions = question_snapshot(event)
             durable["pending_questions"] = [q for q in questions if q["scope"] == "goal"]
             temp["pending_questions"] = [q for q in questions if q["scope"] != "goal"]
@@ -173,7 +177,17 @@ class GoalStore:
                 recent.append({"message": row["message"], "turn_id": result["turn_id"],
                                "summary": result["proposal"]["summary"],
                                "questions": result["proposal"]["questions"]})
-            return {**snapshot, "personal_background": self.background(owner),
+            last_results = []
+            if self._has_table("search_runs"):
+                last = self.db.execute("SELECT s.data FROM search_runs s JOIN turns t ON t.event=s.event "
+                    "WHERE t.owner=? AND t.goal=? ORDER BY t.event DESC LIMIT 1", (owner,goal)).fetchone()
+                if last:
+                    data = json.loads(last[0])
+                    last_results = data.get("displayed_identities", [])
+                    if not last_results:
+                        last_results = [{"previous_answer": data["table"]}]
+            return {**snapshot, "last_results": last_results, "personal_background": self.background(owner),
+                    "last_view": result.get("view", "school") if rows else "school",
                     "temporary_conditions": [], "recent": recent,
                     "last_event": rows[0]["event"] if rows else 0}
         finally:
@@ -235,6 +249,12 @@ class GoalStore:
                 "personal_background": profile, "background_diff": bg_diff,
                 "background_base_version": old_profile["version"], "temporary_conditions": temp,
             }
+            result["previous_results"] = ctx.get("last_results", [])
+            previous_turn = self.turn_result(owner,goal)
+            result["branches"] = branch_changes(result, previous_turn)
+            view = proposal.get("view", "inherit")
+            result["view"] = ctx.get("last_view", "school") if view == "inherit" else view
+            result["language"] = proposal.get("language", "")
             if reparse_of is not None:
                 result["reparse_of"] = reparse_of
             if bg_diff:

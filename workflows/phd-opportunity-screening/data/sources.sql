@@ -25,7 +25,7 @@ CREATE TABLE source_regions (
 CREATE TABLE source_types (
     source_id TEXT NOT NULL REFERENCES sources(id),
     info_type TEXT NOT NULL CHECK (info_type IN
-        ('program', 'vacancy', 'funding', 'supervisor_lead', 'application_experience', 'resource_list', 'ranking')),
+        ('program', 'vacancy', 'funding', 'supervisor_lead', 'application_experience', 'resource_list', 'ranking', 'research_publication', 'conference', 'research_project', 'faculty_directory', 'supervision_record')),
     PRIMARY KEY (source_id, info_type)
 );
 CREATE INDEX regions_lookup ON source_regions(region, source_id);
@@ -257,8 +257,78 @@ INSERT INTO source_degrees SELECT id, 'professional_doctorate' FROM sources WHER
     ('ipeds','qs-world-2027','qs-subject-2026','the-world-2027','the-subject-2026',
      'shanghai-arwu-2026','shanghai-gras-2025','usnews-grad-2026');
 
+INSERT INTO sources (id,kind,name,coverage,url,notes) VALUES
+('google-scholar','site','Google Scholar','Global','https://scholar.google.com/','Search papers by author or topic and follow publisher links. Discovery, not a bulk API or evidence of supervision.'),
+('openalex','site','OpenAlex','Global','https://openalex.org/','Structured works and author identifiers. Resolve name collisions using the current faculty profile.'),
+('dblp','site','dblp computer science bibliography','Computing','https://dblp.org/','Find author and venue entries, then open the official paper.'),
+('pmlr','site','Proceedings of Machine Learning Research','International conferences','https://proceedings.mlr.press/','Official conference volumes and author lists for machine learning research.'),
+('cordis','site','CORDIS Projects and Results','European Union','https://cordis.europa.eu/projects','Verify a funded project and named roles. Check openings separately.'),
+('ubc-supervisors','site','UBC Graduate Research Supervisors','Canada','https://www.grad.ubc.ca/prospective-students/research-supervisors','Find institutional profiles, research programs and routes to supervision.'),
+('ubc-theses','site','UBC Theses and Dissertations','Canada','https://open.library.ubc.ca/cIRcle/collections/ubctheses','Verify a named supervisor in a thesis record. Use an official alternate record if access is limited.'),
+('mathgenealogy','site','Mathematics Genealogy Project','International','https://www.mathgenealogy.org/','Discover doctoral advisor and dissertation leads; confirm using the awarding university.');
+INSERT INTO source_types VALUES
+('google-scholar','supervisor_lead'),
+('google-scholar','research_publication'),
+('openalex','supervisor_lead'),
+('openalex','research_publication'),
+('dblp','supervisor_lead'),
+('dblp','conference'),
+('pmlr','supervisor_lead'),
+('pmlr','conference'),
+('cordis','supervisor_lead'),
+('cordis','research_project'),
+('ubc-supervisors','supervisor_lead'),
+('ubc-supervisors','faculty_directory'),
+('ubc-theses','supervisor_lead'),
+('ubc-theses','supervision_record'),
+('mathgenealogy','supervisor_lead'),
+('mathgenealogy','supervision_record');
+INSERT INTO source_regions VALUES
+('google-scholar','global'),
+('openalex','global'),
+('dblp','global'),
+('pmlr','global'),
+('cordis','Europe'),
+('ubc-supervisors','Canada'),
+('ubc-theses','Canada'),
+('mathgenealogy','global');
+INSERT INTO source_degrees VALUES
+('google-scholar','master'),
+('google-scholar','PhD'),
+('openalex','master'),
+('openalex','PhD'),
+('dblp','master'),
+('dblp','PhD'),
+('pmlr','master'),
+('pmlr','PhD'),
+('cordis','master'),
+('cordis','PhD'),
+('ubc-supervisors','master'),
+('ubc-supervisors','PhD'),
+('ubc-theses','master'),
+('ubc-theses','PhD'),
+('mathgenealogy','master'),
+('mathgenealogy','PhD');
+
+INSERT INTO sources(id,kind,name,coverage,url,notes) VALUES
+    ('berkeley-bair','site','Berkeley Artificial Intelligence Research Lab','United States',
+     'https://bair.berkeley.edu/','Official lab people and projects. Check faculty eligibility and open positions separately.');
+INSERT INTO source_types VALUES ('berkeley-bair','supervisor_lead'),('berkeley-bair','research_project');
+INSERT INTO source_degrees VALUES ('berkeley-bair','master'),('berkeley-bair','PhD');
+INSERT INTO source_regions VALUES ('berkeley-bair','US');
+
+CREATE TABLE source_capabilities (
+    source_id TEXT NOT NULL REFERENCES sources(id), purpose TEXT NOT NULL CHECK(purpose IN ('discover','verify')),
+    claim TEXT NOT NULL, PRIMARY KEY(source_id,purpose,claim)
+);
+INSERT INTO source_capabilities SELECT source_id,'discover',info_type FROM source_types;
+INSERT INTO source_capabilities VALUES
+    ('berkeley-bair','verify','lab_project'), ('pmlr','verify','published_work'), ('cordis','verify','funded_project'),
+    ('ubc-supervisors','verify','faculty_profile'), ('ubc-theses','verify','named_thesis_supervisor');
 CREATE VIEW source_catalog AS
 SELECT s.*,
+       (SELECT json_group_array(json_object('purpose',purpose,'claim',claim)) FROM
+           (SELECT purpose,claim FROM source_capabilities WHERE source_id=s.id ORDER BY purpose,claim)) AS capabilities,
        (SELECT json_group_array(region) FROM
            (SELECT region FROM source_regions WHERE source_id = s.id ORDER BY region)) AS regions,
        (SELECT json_group_array(info_type) FROM

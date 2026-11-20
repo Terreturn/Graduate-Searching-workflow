@@ -27,7 +27,7 @@ def plan_search(event, catalog_path=CATALOG):
         "rules_by_degree": degree_branches(event["effective_rules"]),
         "personal_background": [{"field": f["field"], "value": f["value"]}
                                 for f in event.get("personal_background", {}).get("facts", [])],
-        "catalog": catalog,
+        "catalog": catalog, "branch": event.get("branch", "school"), "focus": event.get("focus", ""),
     }
     fields = {"search_direction": STRING, "source_ids": array(choice(sources) if sources else STRING),
               "search_focus": STRING, "ranking_reason": STRING}
